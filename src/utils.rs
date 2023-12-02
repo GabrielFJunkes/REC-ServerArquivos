@@ -102,10 +102,7 @@ pub fn download(stream: &mut TcpStream, file_name: &str, print: bool) {
     send_string(stream, &file_name);
     
     let mut buf = [0;1];
-    println!("1 {buf:?}");
     let _ = stream.read_exact(&mut buf);
-
-    println!("1 {:?}", buf[0]);
 
     if buf[0] == 1 {
 
@@ -113,7 +110,9 @@ pub fn download(stream: &mut TcpStream, file_name: &str, print: bool) {
         let mut size = read_size(stream);
         loop {
             if size==0 {
-                println!("Arquivo recebido com sucesso.");
+                if print{
+                    println!("Arquivo recebido com sucesso.");
+                }
                 break;
             }
             let mut buf_file = [0; 4096];

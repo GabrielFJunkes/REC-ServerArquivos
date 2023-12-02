@@ -33,7 +33,6 @@ fn download(stream: &mut TcpStream) {
             let file_exists = file.is_file();
             if file_exists {
                 let buf = [1];
-                println!("buf {buf:?}");
                 let _ = stream.write_all(&buf);
 
                 let file = &fs::read(&path).unwrap();
