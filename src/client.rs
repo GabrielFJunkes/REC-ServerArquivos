@@ -123,71 +123,75 @@ fn main() {
     let _ = stdout().flush();
     stdin.read_line(&mut ip).unwrap();
     
-    if let Ok(mut stream) = TcpStream::connect(&ip.trim()) {
-        std::process::Command::new("clear").status().unwrap();
-        read_server_string(&mut stream);
-        help();
-        loop {
-            let mut cmd = String::new();
-            print!("Comando: ");
-            let _ = stdout().flush();
-            stdin.read_line(&mut cmd).unwrap();
-            let mut cmd_list = cmd.split_whitespace();
-            match cmd_list.next() {
-                Some(cmd) => {
-                    std::process::Command::new("clear").status().unwrap();
-                    match cmd.to_lowercase().as_str() {
-                        "ls" => {
-                            println!("Arquivos locais:");
-                            list_local();
-                        },
-                        "list" => {
-                            list(&mut stream);
-                        },
-                        "upload" => {
-                            let file_name = cmd_list.next();
-                            if let Some(file_name) = file_name {
-                                upload(&mut stream, file_name);
-                            }else{
-                                eprintln!("Comando upload requer nome do arquivo");
-                                eprintln!("Exemplo: upload file.txt")
+    match TcpStream::connect(&ip.trim()) {
+        Ok(mut stream) =>  {
+            std::process::Command::new("clear").status().unwrap();
+            read_server_string(&mut stream);
+            help();
+            loop {
+                let mut cmd = String::new();
+                print!("Comando: ");
+                let _ = stdout().flush();
+                stdin.read_line(&mut cmd).unwrap();
+                let mut cmd_list = cmd.split_whitespace();
+                match cmd_list.next() {
+                    Some(cmd) => {
+                        std::process::Command::new("clear").status().unwrap();
+                        match cmd.to_lowercase().as_str() {
+                            "ls" => {
+                                println!("Arquivos locais:");
+                                list_local();
+                            },
+                            "list" => {
+                                list(&mut stream);
+                            },
+                            "upload" => {
+                                let file_name = cmd_list.next();
+                                if let Some(file_name) = file_name {
+                                    upload(&mut stream, file_name);
+                                }else{
+                                    eprintln!("Comando upload requer nome do arquivo");
+                                    eprintln!("Exemplo: upload file.txt")
+                                }
+                            },
+                            "download" => {
+                                let file_name = cmd_list.next();
+                                if let Some(file_name) = file_name {
+                                    download(&mut stream, file_name);
+                                }else{
+                                    eprintln!("Comando download requer nome do arquivo");
+                                    eprintln!("Exemplo: download file.txt")
+                                }
+                            },
+                            "delete" => {
+                                let file_name = cmd_list.next();
+                                if let Some(file_name) = file_name {
+                                    delete(&mut stream, file_name);
+                                }else{
+                                    eprintln!("Comando delete requer nome do arquivo");
+                                    eprintln!("Exemplo: delete file.txt")
+                                }
+                            },
+                            "help" => {
+                                help();
+                            },
+                            "exit" => {
+                                break;
+                            },
+                            _ => {
+                                eprintln!("Digite um comando válido")
                             }
-                        },
-                        "download" => {
-                            let file_name = cmd_list.next();
-                            if let Some(file_name) = file_name {
-                                download(&mut stream, file_name);
-                            }else{
-                                eprintln!("Comando download requer nome do arquivo");
-                                eprintln!("Exemplo: download file.txt")
-                            }
-                        },
-                        "delete" => {
-                            let file_name = cmd_list.next();
-                            if let Some(file_name) = file_name {
-                                delete(&mut stream, file_name);
-                            }else{
-                                eprintln!("Comando delete requer nome do arquivo");
-                                eprintln!("Exemplo: delete file.txt")
-                            }
-                        },
-                        "help" => {
-                            help();
-                        },
-                        "exit" => {
-                            break;
-                        },
-                        _ => {
-                            eprintln!("Digite um comando válido")
                         }
-                    }
-                },
-                _ => {
-                    eprintln!("Digite um comando válido")
-                },
+                    },
+                    _ => {
+                        eprintln!("Digite um comando válido")
+                    },
+                }
             }
+        },
+        Err(err) => {
+            eprintln!("Falha ao conectar ao servidor {ip}");
+            eprintln!("Erro {err}");
         }
-    }else{
-        eprintln!("Falha ao conectar ao servidor {ip}");
     }
 }

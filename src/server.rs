@@ -157,11 +157,12 @@ fn handle_connection(stream: &mut TcpStream) {
 }
 
 pub fn main() -> std::io::Result<()> {
-    let listener = TcpListener::bind("127.0.0.1:8888")?;
+    let listener = TcpListener::bind("192.168.100.132:8888")?;
     println!("Servidor rodando em {}", listener.local_addr().unwrap());
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
+                println!("Nova conexão de {}", stream.peer_addr().unwrap().to_string());
                 let mut stream_clone = stream.try_clone().unwrap();
                 let _ = thread::Builder::new().name(stream.peer_addr().unwrap().to_string()).spawn(move || {
                     handle_connection(&mut stream);
