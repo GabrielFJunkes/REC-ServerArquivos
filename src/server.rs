@@ -32,17 +32,20 @@ fn download(stream: &mut TcpStream) {
             let file = Path::new(&path);
             let file_exists = file.is_file();
             if file_exists {
-                let _ = stream.write_all(&[1]);
+                let buf = [1];
+                println!("buf {buf:?}");
+                let _ = stream.write_all(&buf);
+
                 let file = &fs::read(&path).unwrap();
                 let size = file.len().to_le_bytes();
                 let _ = stream.write_all(&size);
                 let _ = stream.write_all(&file);
             }else{
-                let _ = stream.write_all(&[0]);
+                let _ = stream.write_all(&[0;1]);
                 send_string(stream, "O arquivo não existe!");
             }
         }else{
-            let _ = stream.write_all(&[0]);
+            let _ = stream.write_all(&[0;1]);
             send_string(stream, "Erro ao ler nome de arquivo!");
         }
     }
@@ -157,7 +160,7 @@ fn handle_connection(stream: &mut TcpStream) {
 }
 
 pub fn main() -> std::io::Result<()> {
-    let listener = TcpListener::bind("192.168.100.132:8888")?;
+    let listener = TcpListener::bind("0.0.0.0:8888")?;
     println!("Servidor rodando em {}", listener.local_addr().unwrap());
     for stream in listener.incoming() {
         match stream {

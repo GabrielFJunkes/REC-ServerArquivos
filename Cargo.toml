@@ -14,5 +14,9 @@ path = "src/server.rs"
 [lib]
 name = "util"
 path = "src/utils.rs"
+[[bin]]
+name = "bench"
+path = "src/benchmarks.rs"
 
 [dependencies]
+rand = "0.8.5"
