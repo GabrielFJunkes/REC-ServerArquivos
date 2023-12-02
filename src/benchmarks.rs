@@ -1,4 +1,4 @@
-use std::{time::Instant, net::TcpStream, fs::File, io::Write, thread::{self, JoinHandle}, sync::{Arc, Mutex, mpsc::{channel, Sender}}, ops::Div};
+use std::{time::Instant, net::TcpStream, fs::File, io::Write, thread::{self, JoinHandle}, sync::{Arc, Mutex, }};
 use util::{upload, download, read_server_string, delete};
 use rand::distributions::{Alphanumeric, DistString};
 
@@ -7,7 +7,7 @@ fn setup(ip: &str) -> TcpStream {
     stream
 }
 
-fn run_benchmark_for_2_params(f: fn(&mut TcpStream, &str, bool), param: &str, mut data: Arc<Mutex<Vec<u128>>>) {
+fn run_benchmark_for_2_params(f: fn(&mut TcpStream, &str, bool), param: &str, data: Arc<Mutex<Vec<u128>>>) {
     let now = Instant::now();
 
     let mut stream = setup("0.0.0.0:8888");
@@ -21,7 +21,7 @@ fn run_benchmark_for_2_params(f: fn(&mut TcpStream, &str, bool), param: &str, mu
 fn upload_benchmark(id: u64, data: Arc<Mutex<Vec<u128>>>) {
     let path = format!("arq{}.txt", id);
     let mut file = File::create(&path).unwrap();
-    let string = Alphanumeric.sample_string(&mut rand::thread_rng(), 64);
+    let string = Alphanumeric.sample_string(&mut rand::thread_rng(), 64*64*64);
     let _ = file.write_all(&string.as_bytes());
 
     run_benchmark_for_2_params(upload, &path, data);
@@ -64,7 +64,21 @@ fn run_benchmark_print_average(f: fn(u64, Arc<Mutex<Vec<u128>>>), nome: &str, co
 }
 
 fn main() {
+    let count = 10;
+    println!("\nQuantidade de clientes: {count}");
+    run_benchmark_print_average(upload_benchmark, "upload", count);
+    run_benchmark_print_average(download_benchmark, "download", count);
+    run_benchmark_print_average(delete_benchmark, "delete", count);
+
     let count = 100;
+    println!("\nQuantidade de clientes: {count}");
+    run_benchmark_print_average(upload_benchmark, "upload", count);
+    run_benchmark_print_average(download_benchmark, "download", count);
+    run_benchmark_print_average(delete_benchmark, "delete", count);
+
+
+    let count = 300;
+    println!("\nQuantidade de clientes: {count}");
     run_benchmark_print_average(upload_benchmark, "upload", count);
     run_benchmark_print_average(download_benchmark, "download", count);
     run_benchmark_print_average(delete_benchmark, "delete", count);

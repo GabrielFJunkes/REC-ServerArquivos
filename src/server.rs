@@ -164,7 +164,6 @@ pub fn main() -> std::io::Result<()> {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                println!("Nova conexão de {}", stream.peer_addr().unwrap().to_string());
                 let mut stream_clone = stream.try_clone().unwrap();
                 let _ = thread::Builder::new().name(stream.peer_addr().unwrap().to_string()).spawn(move || {
                     handle_connection(&mut stream);
