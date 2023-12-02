@@ -26,96 +26,97 @@ fn list(stream: &mut TcpStream) {
 
 fn download(stream: &mut TcpStream) {
     
-    let string = read_string(stream);
-
-    if string.len()>0 {
-        let path = format!("./arquivos_server/{string}");
-        let file = Path::new(&path);
-        let file_exists = file.is_file();
-        if file_exists {
-            let _ = stream.write_all(&[1]);
-            let file = &fs::read(&path).unwrap();
-            let size = file.len().to_le_bytes();
-            let _ = stream.write_all(&size);
-            let _ = stream.write_all(&file);
+    if let Some(string) = read_string(stream) {
+        if string.len()>0 {
+            let path = format!("./arquivos_server/{string}");
+            let file = Path::new(&path);
+            let file_exists = file.is_file();
+            if file_exists {
+                let _ = stream.write_all(&[1]);
+                let file = &fs::read(&path).unwrap();
+                let size = file.len().to_le_bytes();
+                let _ = stream.write_all(&size);
+                let _ = stream.write_all(&file);
+            }else{
+                let _ = stream.write_all(&[0]);
+                send_string(stream, "O arquivo não existe!");
+            }
         }else{
             let _ = stream.write_all(&[0]);
-            send_string(stream, "O arquivo não existe!");
+            send_string(stream, "Erro ao ler nome de arquivo!");
         }
-    }else{
-        let _ = stream.write_all(&[0]);
-        send_string(stream, "Erro ao ler nome de arquivo!");
     }
+    
 }
 
 
 fn upload(stream: &mut TcpStream) {
     
-    let string = read_string(stream);
+    if let Some(string) = read_string(stream) {
+        if string.len()>0 {
+            let path = format!("./arquivos_server/{}", string);
     
-    if string.len()>0 {
-        let path = format!("./arquivos_server/{}", string);
-
-        if Path::new(&path).is_file() {
-            let _ = fs::remove_file(&path);
-        }
-        
-        let mut file = File::create(&path).unwrap();
-        let mut size = read_size(stream);
-
-        loop {
-            let mut buf_file = [0; 4096];
-            match stream.read(&mut buf_file) {
-                Ok(0) => {
-                    if size==0 {
-                        send_string(stream, "Arquivo recebido com sucesso.");
-                    }else{
+            if Path::new(&path).is_file() {
+                let _ = fs::remove_file(&path);
+            }
+            
+            let mut file = File::create(&path).unwrap();
+            let mut size = read_size(stream);
+    
+            loop {
+                let mut buf_file = [0; 4096];
+                match stream.read(&mut buf_file) {
+                    Ok(0) => {
+                        if size==0 {
+                            send_string(stream, "Arquivo recebido com sucesso.");
+                        }else{
+                            send_string(stream, "Falha ao receber arquivo!");
+                        }
+                        break;
+                    },
+                    Ok(n) => {
+                        let _ = file.write_all(&buf_file[..n]);
+                        size -= n;
+                    },
+                    Err(_) => {
                         send_string(stream, "Falha ao receber arquivo!");
+                        break;
                     }
-                    break;
-                },
-                Ok(n) => {
-                    let _ = file.write_all(&buf_file[..n]);
-                    size -= n;
-                },
-                Err(_) => {
-                    send_string(stream, "Falha ao receber arquivo!");
+                }
+                if size==0 {
+                    send_string(stream, "Arquivo recebido com sucesso.");
                     break;
                 }
             }
-            if size==0 {
-                send_string(stream, "Arquivo recebido com sucesso.");
-                break;
-            }
+        }else{
+            send_string(stream, "Erro ao ler nome de arquivo!");
         }
-    }else{
-        send_string(stream, "Erro ao ler nome de arquivo!");
     }
 }
 
 fn delete(stream: &mut TcpStream) {
 
-    let string = read_string(stream);
-
-    if string.len()>0 {
-        let path = format!("./arquivos_server/{string}");
-        let file_exists = Path::new(&path).is_file();
-        if file_exists {
-            let result = fs::remove_file(path);
-            match result {
-                Ok(_) => {
-                    send_string(stream, "Arquivo excluido com sucesso.");
-                },
-                Err(_) => {
-                    send_string(stream, "Não foi possivel excluir o arquivo!");
-                },
+    if let Some(string) = read_string(stream) {
+        if string.len()>0 {
+            let path = format!("./arquivos_server/{string}");
+            let file_exists = Path::new(&path).is_file();
+            if file_exists {
+                let result = fs::remove_file(path);
+                match result {
+                    Ok(_) => {
+                        send_string(stream, "Arquivo excluido com sucesso.");
+                    },
+                    Err(_) => {
+                        send_string(stream, "Não foi possivel excluir o arquivo!");
+                    },
+                }
+            }else{
+                send_string(stream, "O arquivo não existe!");
             }
         }else{
-            send_string(stream, "O arquivo não existe!");
+            send_string(stream, "Erro ao ler nome de arquivo!");
         }
-    }else{
-        send_string(stream, "Erro ao ler nome de arquivo!");
-    }
+    }    
 }
 
 fn handle_connection(stream: &mut TcpStream) {

@@ -1,18 +1,27 @@
-use std::{net::TcpStream, str, io::{Write, Read, self, stdout}, fs::{File, self}};
+use std::{net::TcpStream, str, io::{Write, Read, self, stdout}, fs::{File, self}, process};
 use util::{Commands, read_size, send_string, read_string};
 
 fn read_server_string(stream: &mut TcpStream) {
-    let string = read_string(stream);
-    println!("Servidor: {string}");
+    if let Some(string) = read_string(stream){
+        println!("Servidor: {string}");
+    }else{
+        panic!("Servidor fechou a conexão!");
+    }
 }
 
 fn list(stream: &mut TcpStream) {
     let _ = stream.write_all(&[Commands::List as u8]);
     let _ = stream.flush();
-    let string = read_string(stream);
-    for line in string.lines() {
-        println!("\t{line}");
+    if let Some(string) = read_string(stream){
+        println!("Arquivos no server:");
+        for line in string.lines() {
+            println!("\t{line}");
+        }
+    }else{
+        eprintln!("Servidor fechou a conexão!");
+        process::exit(0x0100);
     }
+    
 }
 
 fn upload(stream: &mut TcpStream, file_name: &str) {
@@ -108,14 +117,18 @@ fn help() {
 
 fn main() {
     std::process::Command::new("clear").status().unwrap();
-    //TODO: adicionar ips diferentes
-    //TODO: close quando server fecha
-    if let Ok(mut stream) = TcpStream::connect("127.0.0.1:8888") {
+    print!("Ip: ");
+    let stdin = io::stdin();
+    let mut ip = String::new();
+    let _ = stdout().flush();
+    stdin.read_line(&mut ip).unwrap();
+    
+    if let Ok(mut stream) = TcpStream::connect(&ip.trim()) {
+        std::process::Command::new("clear").status().unwrap();
         read_server_string(&mut stream);
         help();
         loop {
             let mut cmd = String::new();
-            let stdin = io::stdin();
             print!("Comando: ");
             let _ = stdout().flush();
             stdin.read_line(&mut cmd).unwrap();
@@ -129,7 +142,6 @@ fn main() {
                             list_local();
                         },
                         "list" => {
-                            println!("Arquivos no server:");
                             list(&mut stream);
                         },
                         "upload" => {
@@ -175,5 +187,7 @@ fn main() {
                 },
             }
         }
+    }else{
+        eprintln!("Falha ao conectar ao servidor {ip}");
     }
 }

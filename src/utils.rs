@@ -32,13 +32,16 @@ pub fn read_size(stream: &mut TcpStream) -> usize {
     usize::from_le_bytes(buf_size)   
 }
 
-pub fn read_string(stream: &mut TcpStream) -> String {
+pub fn read_string(stream: &mut TcpStream) -> Option<String> {
     let size = read_size(stream);
+    if size==0 {
+        return None
+    }
     let mut buf_name: Vec<u8> = Vec::new();
     buf_name.resize(size, 0);
     let _ = stream.read_exact(&mut buf_name);
     let string = str::from_utf8(&buf_name).unwrap();
-    String::from(string)
+    Some(String::from(string))
 }
 
 pub fn send_string(stream: &mut TcpStream, string: &str) {
