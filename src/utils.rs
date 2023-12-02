@@ -1,3 +1,5 @@
+use std::{net::TcpStream, io::{Read, Write}, str};
+
 #[repr(u8)]
 pub enum Commands {
     List,
@@ -22,4 +24,25 @@ impl Into<Commands> for u8 {
             _ => Commands::None,
         }
     }
+}
+
+pub fn read_size(stream: &mut TcpStream) -> usize {
+    let mut buf_size: [u8; 8] = [0; 8];
+    let _ = stream.read_exact(&mut buf_size);
+    usize::from_le_bytes(buf_size)   
+}
+
+pub fn read_string(stream: &mut TcpStream) -> String {
+    let size = read_size(stream);
+    let mut buf_name: Vec<u8> = Vec::new();
+    buf_name.resize(size, 0);
+    let _ = stream.read_exact(&mut buf_name);
+    let string = str::from_utf8(&buf_name).unwrap();
+    String::from(string)
+}
+
+pub fn send_string(stream: &mut TcpStream, string: &str) {
+    let size = string.len().to_le_bytes();
+    let _ = stream.write_all(&size);
+    let _ = stream.write_all(string.as_bytes());
 }
