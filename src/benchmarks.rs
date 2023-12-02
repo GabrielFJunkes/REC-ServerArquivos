@@ -1,4 +1,4 @@
-use std::{time::Instant, net::TcpStream, fs::File, io::Write, thread::{self, JoinHandle}, sync::{Arc, Mutex, }};
+use std::{time::{Instant, Duration}, net::TcpStream, fs::File, io::Write, thread::{self, JoinHandle}, sync::{Arc, Mutex, }, path::Path};
 use util::{upload, download, read_server_string, delete};
 use rand::distributions::{Alphanumeric, DistString};
 
@@ -15,15 +15,16 @@ fn run_benchmark_for_2_params(f: fn(&mut TcpStream, &str, bool), param: &str, da
     f(&mut stream, param, false);
     
     let elapsed = now.elapsed();
-    data.lock().unwrap().push(elapsed.as_millis())
+    data.lock().unwrap().push(elapsed.as_millis());
 }
 
 fn upload_benchmark(id: u64, data: Arc<Mutex<Vec<u128>>>) {
     let path = format!("arq{}.txt", id);
-    let mut file = File::create(&path).unwrap();
-    let string = Alphanumeric.sample_string(&mut rand::thread_rng(), 64*64*64);
-    let _ = file.write_all(&string.as_bytes());
-
+    if !Path::new(&path).is_file() {
+        let mut file = File::create(&path).unwrap();
+        let string = Alphanumeric.sample_string(&mut rand::thread_rng(), 64*64*64);
+        let _ = file.write_all(&string.as_bytes());
+    }
     run_benchmark_for_2_params(upload, &path, data);
 }
 
@@ -37,11 +38,14 @@ fn delete_benchmark(id: u64, data: Arc<Mutex<Vec<u128>>>) {
     run_benchmark_for_2_params(delete, &name, data);
 }
 
-fn run_benchmark(count: u64, f: fn(u64, Arc<Mutex<Vec<u128>>>), data: Arc<Mutex<Vec<u128>>>) {
+fn run_benchmark(count: u64, f: fn(u64, Arc<Mutex<Vec<u128>>>), data: Arc<Mutex<Vec<u128>>>, nome: &str) {
     let mut threads = Vec::<Result<JoinHandle<()>, ()>>::new();
     for i in 0..count {
+        if i%250==0{
+            thread::sleep(Duration::from_millis(400));
+        }
         let data1 = data.clone();
-        threads.push(thread::Builder::new().name(i.to_string()).spawn(move || {
+        threads.push(thread::Builder::new().name(format!("{nome} - {count}")).spawn(move || {
             f(i, data1);
         }).map_err(|err| {
             eprintln!("Erro: {err}")
@@ -56,7 +60,7 @@ fn run_benchmark(count: u64, f: fn(u64, Arc<Mutex<Vec<u128>>>), data: Arc<Mutex<
 
 fn run_benchmark_print_average(f: fn(u64, Arc<Mutex<Vec<u128>>>), nome: &str, count: u64) {
     let data = Arc::new(Mutex::new(Vec::new()));
-    run_benchmark(count, f, Arc::clone(&data));
+    run_benchmark(count, f, Arc::clone(&data), nome);
     let lock = data.lock().unwrap();
     let sum: u128 = lock.iter().sum();
     let average = sum as f64 / count as f64;
@@ -76,8 +80,25 @@ fn main() {
     run_benchmark_print_average(download_benchmark, "download", count);
     run_benchmark_print_average(delete_benchmark, "delete", count);
 
+    thread::sleep(Duration::from_millis(500));
 
     let count = 300;
+    println!("\nQuantidade de clientes: {count}");
+    run_benchmark_print_average(upload_benchmark, "upload", count);
+    run_benchmark_print_average(download_benchmark, "download", count);
+    run_benchmark_print_average(delete_benchmark, "delete", count);
+
+    thread::sleep(Duration::from_millis(500));
+
+    let count = 500;
+    println!("\nQuantidade de clientes: {count}");
+    run_benchmark_print_average(upload_benchmark, "upload", count);
+    run_benchmark_print_average(download_benchmark, "download", count);
+    run_benchmark_print_average(delete_benchmark, "delete", count);
+
+    thread::sleep(Duration::from_millis(500));
+
+    let count = 1000;
     println!("\nQuantidade de clientes: {count}");
     run_benchmark_print_average(upload_benchmark, "upload", count);
     run_benchmark_print_average(download_benchmark, "download", count);
