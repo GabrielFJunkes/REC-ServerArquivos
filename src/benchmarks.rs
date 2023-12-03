@@ -10,7 +10,7 @@ fn setup(ip: &str) -> TcpStream {
 fn run_benchmark_for_2_params(f: fn(&mut TcpStream, &str, bool), param: &str, data: Arc<Mutex<Vec<u128>>>) {
     let now = Instant::now();
 
-    let mut stream = setup("200.138.210.254:8888");
+    let mut stream = setup("0.0.0.0:8888");
     read_server_string(&mut stream, false);
     f(&mut stream, param, false);
     
