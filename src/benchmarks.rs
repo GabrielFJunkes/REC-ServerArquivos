@@ -65,7 +65,7 @@ fn run_benchmark_print_average(f: fn(u64, Arc<Mutex<Vec<u128>>>), nome: &str, co
         let iter = lock.iter();
         let sum: u128 = iter.clone().sum();
         let average = sum as f64 / (count * loop_count) as f64;
-        println!("Média de {count} {nome}: {:.2} μs - max: {} μs - min: {} μs", average, iter.clone().max().unwrap(), iter.min().unwrap());
+        println!("Média de {count} {nome}: {:.2} ms - max: {} ms - min: {} ms", average/100f64, iter.clone().max().unwrap()/100, iter.min().unwrap()/100);
         loop_count += 1;
     }
 }
