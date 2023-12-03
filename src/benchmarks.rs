@@ -10,7 +10,7 @@ fn setup(ip: &str) -> TcpStream {
 fn run_benchmark_for_2_params(f: fn(&mut TcpStream, &str, bool), param: &str, data: Arc<Mutex<Vec<u128>>>) {
     let now = Instant::now();
 
-    let mut stream = setup("0.0.0.0:8888");
+    let mut stream = setup("200.138.210.254:8888");
     read_server_string(&mut stream, false);
     f(&mut stream, param, false);
     
@@ -65,7 +65,7 @@ fn run_benchmark_print_average(f: fn(u64, Arc<Mutex<Vec<u128>>>), nome: &str, co
         let iter = lock.iter();
         let sum: u128 = iter.clone().sum();
         let average = sum as f64 / (count * loop_count) as f64;
-        println!("Média de {count} {nome}: {:.2} ms - max: {} ms - min: {} ms", average/100f64, iter.clone().max().unwrap()/100, iter.min().unwrap()/100);
+        println!("{count}: média {nome}: {:.2} ms - max: {} ms - min: {} ms", average*0.001, iter.clone().max().unwrap()/100, iter.min().unwrap()/100);
         loop_count += 1;
     }
 }
@@ -77,3 +77,6 @@ fn main() {
     //run_benchmark_print_average(delete_benchmark, "delete", count);
 
 }
+// 100: média download: 261.65 ms - max: 6324 ms  - min: 668 ms
+// 200: média download: 527.39 ms - max: 8430 ms  - min: 876 ms
+// 300: média download: 810.23 ms - max: 13310 ms - min: 1083 ms
